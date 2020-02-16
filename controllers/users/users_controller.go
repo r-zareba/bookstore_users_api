@@ -6,6 +6,7 @@ import (
 	"github.com/r-zareba/bookstore_users_api/errors"
 	"github.com/r-zareba/bookstore_users_api/services"
 	"net/http"
+	"strconv"
 )
 
 func CreateUser(ctx *gin.Context) {
@@ -20,13 +21,13 @@ func CreateUser(ctx *gin.Context) {
 	//fmt.Println(user)
 	//bytes, err := ioutil.ReadAll(ctx.Request.Body)
 	//if err != nil {
-	//	// TODO Handle error
+	//
 	//	return
 	//}
 	//
 	//if err := json.Unmarshal(bytes, &user); err != nil {
 	//	fmt.Println(err.Error())
-	//	// TODO Handle error
+	//
 	//	return
 	//}
 
@@ -39,5 +40,19 @@ func CreateUser(ctx *gin.Context) {
 }
 
 func GetUser(ctx *gin.Context) {
+	userId, idError := strconv.ParseInt(ctx.Param("user_id"), 10, 64)
+	if idError != nil {
+		err := errors.BadRequestError("Cannot parse user if from URL")
+		ctx.JSON(err.Status, err)
+		return
+	}
+
+	user, getError := services.GetUser(userId)
+	if getError != nil {
+		ctx.JSON(getError.Status, getError)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, user)
 
 }
