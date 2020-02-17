@@ -1,7 +1,7 @@
 package users
 
 import (
-	"github.com/r-zareba/bookstore_users_api/errors"
+	"github.com/r-zareba/bookstore_users_api/utils/errors"
 	"strings"
 )
 

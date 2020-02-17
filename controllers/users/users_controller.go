@@ -3,8 +3,8 @@ package users
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/r-zareba/bookstore_users_api/domain/users"
-	"github.com/r-zareba/bookstore_users_api/errors"
 	"github.com/r-zareba/bookstore_users_api/services"
+	"github.com/r-zareba/bookstore_users_api/utils/errors"
 	"net/http"
 	"strconv"
 )
