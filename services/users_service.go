@@ -2,6 +2,8 @@ package services
 
 import (
 	"github.com/r-zareba/bookstore_users_api/domain/users"
+	"github.com/r-zareba/bookstore_users_api/utils/crypto_utils"
+	"github.com/r-zareba/bookstore_users_api/utils/date_utils"
 	"github.com/r-zareba/bookstore_users_api/utils/errors"
 )
 
@@ -9,7 +11,12 @@ func CreateUser(user users.User) (*users.User, *errors.RestError) {
 	if err := user.Validate(); err != nil {
 		return nil, err
 	}
-	if err := user.SaveToDB(); err != nil {
+
+	user.DateCreated = date_utils.GetNowTime()
+	user.Password = crypto_utils.GetMd5(user.Password)
+
+	err := user.SaveToDB()
+	if err != nil {
 		return nil, err
 	}
 

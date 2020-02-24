@@ -5,7 +5,6 @@ package users
 import (
 	"fmt"
 	"github.com/r-zareba/bookstore_users_api/datasources/mysql/users_db"
-	"github.com/r-zareba/bookstore_users_api/utils/date_utils"
 	"github.com/r-zareba/bookstore_users_api/utils/errors"
 	"github.com/r-zareba/bookstore_users_api/utils/mysql_utils"
 )
@@ -28,8 +27,7 @@ func (user *User) GetFromDB() *errors.RestError {
 
 	result := statement.QueryRow(user.Id)
 	// Scan - automatically fill the object attributes
-	getErr := result.Scan(&user.Id, &user.FirstName, &user.LastName, &user.Email,
-		&user.DateCreated, &user.Status, &user.Password)
+	getErr := result.Scan(&user.Id, &user.FirstName, &user.LastName, &user.Email, &user.DateCreated, &user.Status)
 	if getErr != nil {
 		return mysql_utils.GetMySQLError(getErr)
 	}
@@ -89,7 +87,6 @@ func (user *User) SaveToDB() *errors.RestError {
 	}
 	defer statement.Close()
 
-	user.DateCreated = date_utils.GetNowTime()
 	insertResult, saveErr := statement.Exec(user.FirstName, user.LastName, user.Email, user.DateCreated,
 		user.Status, user.Password)
 
