@@ -9,7 +9,7 @@ import (
 	"strconv"
 )
 
-func CreateUser(ctx *gin.Context) {
+func Create(ctx *gin.Context) {
 	var user users.User
 	// Bind json directly to fill User struct fields
 	if err := ctx.ShouldBindJSON(&user); err != nil {
@@ -17,19 +17,6 @@ func CreateUser(ctx *gin.Context) {
 		ctx.JSON(restErr.Status, restErr)
 		return
 	}
-
-	//fmt.Println(user)
-	//bytes, err := ioutil.ReadAll(ctx.Request.Body)
-	//if err != nil {
-	//
-	//	return
-	//}
-	//
-	//if err := json.Unmarshal(bytes, &user); err != nil {
-	//	fmt.Println(err.Error())
-	//
-	//	return
-	//}
 
 	result, saveErr := services.CreateUser(user)
 	if saveErr != nil {
@@ -39,11 +26,25 @@ func CreateUser(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, result)
 }
 
-func GetUser(ctx *gin.Context) {
-	userId, idError := strconv.ParseInt(ctx.Param("user_id"), 10, 64)
+func Delete(ctx *gin.Context) {
+	userId, idError := parseUserId(ctx.Param("user_id"))
 	if idError != nil {
-		err := errors.BadRequestError("Cannot parse user if from URL")
-		ctx.JSON(err.Status, err)
+		ctx.JSON(idError.Status, idError)
+		return
+	}
+
+	_, deleteErr := services.DeleteUser(userId)
+	if deleteErr != nil {
+		ctx.JSON(deleteErr.Status, deleteErr)
+		return
+	}
+	ctx.JSON(http.StatusOK, map[string]string{"status": "deleted"})
+}
+
+func Get(ctx *gin.Context) {
+	userId, idError := parseUserId(ctx.Param("user_id"))
+	if idError != nil {
+		ctx.JSON(idError.Status, idError)
 		return
 	}
 
@@ -55,4 +56,48 @@ func GetUser(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, user)
 
+}
+
+func Update(ctx *gin.Context) {
+	userId, idError := parseUserId(ctx.Param("user_id"))
+	if idError != nil {
+		ctx.JSON(idError.Status, idError)
+		return
+	}
+
+	user := users.User{Id: userId}
+	// Bind json directly to fill User struct fields
+	if err := ctx.ShouldBindJSON(&user); err != nil {
+		restErr := errors.BadRequestError("Invalid JSON body")
+		ctx.JSON(restErr.Status, restErr)
+		return
+	}
+
+	isPartialUpdate := ctx.Request.Method == http.MethodPatch
+	result, updateErr := services.UpdateUser(isPartialUpdate, user)
+	if updateErr != nil {
+		ctx.JSON(updateErr.Status, updateErr)
+		return
+	}
+	ctx.JSON(http.StatusOK, result)
+
+}
+
+func Search(ctx *gin.Context) {
+	status := ctx.Query("status")
+
+	users, err := services.Search(status)
+	if err != nil {
+		ctx.JSON(err.Status, err)
+		return
+	}
+	ctx.JSON(http.StatusOK, users)
+}
+
+func parseUserId(userIdParam string) (int64, *errors.RestError) {
+	userId, idError := strconv.ParseInt(userIdParam, 10, 64)
+	if idError != nil {
+		return 0, errors.BadRequestError("Cannot parse user id from URL")
+	}
+	return userId, nil
 }

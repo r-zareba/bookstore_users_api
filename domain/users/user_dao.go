@@ -7,21 +7,18 @@ import (
 	"github.com/r-zareba/bookstore_users_api/datasources/mysql/users_db"
 	"github.com/r-zareba/bookstore_users_api/utils/date_utils"
 	"github.com/r-zareba/bookstore_users_api/utils/errors"
-	"strings"
+	"github.com/r-zareba/bookstore_users_api/utils/mysql_utils"
 )
 
 const (
-	insertUserQuery = "INSERT INTO users(first_name, last_name, email, date_created) VALUES(?, ?, ?, ?)"
-	getUserQuery    = "SELECT id, first_name, last_name, email, date_created FROM users WHERE id=?"
-
-	uniqueEmailError = "email_UNIQUE"
-	noRowsError      = "no rows in result set"
+	insertUserQuery   = "INSERT INTO users(first_name, last_name, email, date_created, status, password) VALUES(?, ?, ?, ?, ?, ?);"
+	getUserQuery      = "SELECT id, first_name, last_name, email, date_created, status FROM users WHERE id=?;"
+	updateQuery       = "UPDATE users SET first_name=?, last_name=?, email=?, status=?, password=? WHERE id=?;"
+	deleteQuery       = "DELETE FROM users WHERE id=?;"
+	findByStatusQuery = "SELECT id, first_name, last_name, email, date_created, status FROM users WHERE status=?"
 )
 
-var usersDB = make(map[int64]*User)
-
-// TODO Refactor? GetFromDB, FillFromDB
-func (user *User) Get() *errors.RestError {
+func (user *User) GetFromDB() *errors.RestError {
 	// Prepare statement
 	statement, err := users_db.ClientDB.Prepare(getUserQuery)
 	if err != nil {
@@ -31,17 +28,60 @@ func (user *User) Get() *errors.RestError {
 
 	result := statement.QueryRow(user.Id)
 	// Scan - automatically fill the object attributes
-	err = result.Scan(&user.Id, &user.FirstName, &user.LastName, &user.Email, &user.DateCreated)
-	if err != nil {
-		if strings.Contains(err.Error(), noRowsError) {
-			return errors.NotFoundError(fmt.Sprintf("User id: %d not found in database", user.Id))
-		}
-		return errors.InternalServerError(fmt.Sprintf("Error while getting user (id:%d)", user.Id))
+	getErr := result.Scan(&user.Id, &user.FirstName, &user.LastName, &user.Email,
+		&user.DateCreated, &user.Status, &user.Password)
+	if getErr != nil {
+		return mysql_utils.GetMySQLError(getErr)
 	}
 	return nil
 }
 
-func (user *User) Save() *errors.RestError {
+func (user *User) DeleteFromDB() *errors.RestError {
+	// Prepare statement
+	statement, err := users_db.ClientDB.Prepare(deleteQuery)
+	if err != nil {
+		return errors.InternalServerError(err.Error())
+	}
+	defer statement.Close()
+
+	_, deleteErr := statement.Exec(user.Id)
+	if deleteErr != nil {
+		return mysql_utils.GetMySQLError(deleteErr)
+	}
+	return nil
+}
+
+func (user *User) FindByStatusInDB(status string) ([]User, *errors.RestError) {
+	// Prepare statement
+	statement, err := users_db.ClientDB.Prepare(findByStatusQuery)
+	if err != nil {
+		return nil, errors.InternalServerError(err.Error())
+	}
+	defer statement.Close()
+
+	rows, err := statement.Query(status)
+	if err != nil {
+		return nil, mysql_utils.GetMySQLError(err)
+	}
+	defer rows.Close()
+
+	results := make([]User, 0)
+	for rows.Next() {
+		var user User
+		err := rows.Scan(&user.Id, &user.FirstName, &user.LastName, &user.Email, &user.DateCreated, &user.Status)
+		if err != nil {
+			return nil, mysql_utils.GetMySQLError(err)
+		}
+		results = append(results, user)
+	}
+
+	if len(results) == 0 {
+		return nil, errors.NotFoundError(fmt.Sprintf("Users with status: %s not found", status))
+	}
+	return results, nil
+}
+
+func (user *User) SaveToDB() *errors.RestError {
 	// Prepare statement
 	statement, err := users_db.ClientDB.Prepare(insertUserQuery)
 	if err != nil {
@@ -50,13 +90,11 @@ func (user *User) Save() *errors.RestError {
 	defer statement.Close()
 
 	user.DateCreated = date_utils.GetNowTime()
-	insertResult, err := statement.Exec(user.FirstName, user.LastName, user.Email, user.DateCreated)
+	insertResult, saveErr := statement.Exec(user.FirstName, user.LastName, user.Email, user.DateCreated,
+		user.Status, user.Password)
 
-	if err != nil {
-		if strings.Contains(err.Error(), uniqueEmailError) {
-			return errors.BadRequestError(fmt.Sprintf("User with email: %s already exists", user.Email))
-		}
-		return errors.InternalServerError(fmt.Sprintf("Cannot insert user, %s", err.Error()))
+	if saveErr != nil {
+		return mysql_utils.GetMySQLError(saveErr)
 	}
 
 	userId, err := insertResult.LastInsertId()
@@ -65,5 +103,20 @@ func (user *User) Save() *errors.RestError {
 	}
 
 	user.Id = userId
+	return nil
+}
+
+func (user *User) UpdateInDB() *errors.RestError {
+	// Prepare statement
+	statement, err := users_db.ClientDB.Prepare(updateQuery)
+	if err != nil {
+		return errors.InternalServerError(err.Error())
+	}
+	defer statement.Close()
+
+	_, updateErr := statement.Exec(user.FirstName, user.LastName, user.Email, user.Status, user.Password, user.Id)
+	if updateErr != nil {
+		return mysql_utils.GetMySQLError(updateErr)
+	}
 	return nil
 }
