@@ -66,7 +66,7 @@ func UpdateUser(isPartial bool, user users.User) (*users.User, *errors.RestError
 	return currentUser, nil
 }
 
-func Search(status string) ([]users.User, *errors.RestError) {
+func Search(status string) (users.Users, *errors.RestError) {
 	var dao users.User
 	return dao.FindByStatusInDB(status)
 }

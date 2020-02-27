@@ -5,6 +5,7 @@ package users
 import (
 	"fmt"
 	"github.com/r-zareba/bookstore_users_api/datasources/mysql/users_db"
+	"github.com/r-zareba/bookstore_users_api/logger"
 	"github.com/r-zareba/bookstore_users_api/utils/errors"
 	"github.com/r-zareba/bookstore_users_api/utils/mysql_utils"
 )
@@ -21,7 +22,8 @@ func (user *User) GetFromDB() *errors.RestError {
 	// Prepare statement
 	statement, err := users_db.ClientDB.Prepare(getUserQuery)
 	if err != nil {
-		return errors.InternalServerError(err.Error())
+		logger.Error("Error when trying to prepare getUserQuery", err)
+		return errors.InternalServerError("Database error")
 	}
 	defer statement.Close()
 
@@ -38,7 +40,8 @@ func (user *User) DeleteFromDB() *errors.RestError {
 	// Prepare statement
 	statement, err := users_db.ClientDB.Prepare(deleteQuery)
 	if err != nil {
-		return errors.InternalServerError(err.Error())
+		logger.Error("Error when trying to prepare deleteUserQuery", err)
+		return errors.InternalServerError("Database error")
 	}
 	defer statement.Close()
 
@@ -53,7 +56,8 @@ func (user *User) FindByStatusInDB(status string) ([]User, *errors.RestError) {
 	// Prepare statement
 	statement, err := users_db.ClientDB.Prepare(findByStatusQuery)
 	if err != nil {
-		return nil, errors.InternalServerError(err.Error())
+		logger.Error("Error when trying to prepare deleteUserQuery", err)
+		return nil, errors.InternalServerError("Database error")
 	}
 	defer statement.Close()
 
@@ -83,7 +87,8 @@ func (user *User) SaveToDB() *errors.RestError {
 	// Prepare statement
 	statement, err := users_db.ClientDB.Prepare(insertUserQuery)
 	if err != nil {
-		return errors.InternalServerError(err.Error())
+		logger.Error("Error when trying to prepare insertUserQuery", err)
+		return errors.InternalServerError("Database error")
 	}
 	defer statement.Close()
 
@@ -107,7 +112,8 @@ func (user *User) UpdateInDB() *errors.RestError {
 	// Prepare statement
 	statement, err := users_db.ClientDB.Prepare(updateQuery)
 	if err != nil {
-		return errors.InternalServerError(err.Error())
+		logger.Error("Error when trying to prepare updateQuery", err)
+		return errors.InternalServerError("Database error")
 	}
 	defer statement.Close()
 

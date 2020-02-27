@@ -23,7 +23,7 @@ func Create(ctx *gin.Context) {
 		ctx.JSON(saveErr.Status, saveErr)
 		return
 	}
-	ctx.JSON(http.StatusCreated, result)
+	ctx.JSON(http.StatusCreated, result.Marshall(ctx.GetHeader("X-Public") == "true"))
 }
 
 func Delete(ctx *gin.Context) {
@@ -54,7 +54,7 @@ func Get(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, user)
+	ctx.JSON(http.StatusOK, user.Marshall(ctx.GetHeader("X-Public") == "true"))
 
 }
 
@@ -79,7 +79,7 @@ func Update(ctx *gin.Context) {
 		ctx.JSON(updateErr.Status, updateErr)
 		return
 	}
-	ctx.JSON(http.StatusOK, result)
+	ctx.JSON(http.StatusOK, result.Marshall(ctx.GetHeader("X-Public") == "true"))
 
 }
 
@@ -91,7 +91,7 @@ func Search(ctx *gin.Context) {
 		ctx.JSON(err.Status, err)
 		return
 	}
-	ctx.JSON(http.StatusOK, users)
+	ctx.JSON(http.StatusOK, users.Marshall(ctx.GetHeader("X-Public") == "true"))
 }
 
 func parseUserId(userIdParam string) (int64, *errors.RestError) {
