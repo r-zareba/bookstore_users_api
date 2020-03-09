@@ -31,6 +31,16 @@ func GetUser(userId int64) (*users.User, *errors.RestError) {
 	return &user, nil
 }
 
+func LoginUser(request users.LoginRequest) (*users.User, *errors.RestError) {
+	user := users.User{
+		Email: request.Email,
+		Password: crypto_utils.GetMd5(request.Password)}
+	if err := user.FindByEmailAndPasswordInDB(); err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
 func DeleteUser(userId int64) (*users.User, *errors.RestError) {
 	currentUser, getErr := GetUser(userId)
 	if getErr != nil {

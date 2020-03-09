@@ -55,7 +55,23 @@ func Get(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, user.Marshall(ctx.GetHeader("X-Public") == "true"))
+}
 
+func Login(ctx *gin.Context) {
+	var loginRequest users.LoginRequest
+	err := ctx.ShouldBindJSON(&loginRequest)
+	if err != nil {
+		restErr := errors.BadRequestError("Invalid JSON body")
+		ctx.JSON(restErr.Status, restErr)
+		return
+	}
+
+	user, getError := services.LoginUser(loginRequest)
+	if getError != nil {
+		ctx.JSON(getError.Status, getError)
+		return
+	}
+	ctx.JSON(http.StatusOK, user.Marshall(ctx.GetHeader("X-Public") == "true"))
 }
 
 func Update(ctx *gin.Context) {

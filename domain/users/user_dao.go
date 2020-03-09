@@ -11,11 +11,12 @@ import (
 )
 
 const (
-	insertUserQuery   = "INSERT INTO users(first_name, last_name, email, date_created, status, password) VALUES(?, ?, ?, ?, ?, ?);"
-	getUserQuery      = "SELECT id, first_name, last_name, email, date_created, status FROM users WHERE id=?;"
-	updateQuery       = "UPDATE users SET first_name=?, last_name=?, email=?, status=?, password=? WHERE id=?;"
-	deleteQuery       = "DELETE FROM users WHERE id=?;"
-	findByStatusQuery = "SELECT id, first_name, last_name, email, date_created, status FROM users WHERE status=?"
+	insertUserQuery             = "INSERT INTO users(first_name, last_name, email, date_created, status, password) VALUES(?, ?, ?, ?, ?, ?);"
+	getUserQuery                = "SELECT id, first_name, last_name, email, date_created, status FROM users WHERE id=?;"
+	updateQuery                 = "UPDATE users SET first_name=?, last_name=?, email=?, status=?, password=? WHERE id=?;"
+	deleteQuery                 = "DELETE FROM users WHERE id=?;"
+	findByStatusQuery           = "SELECT id, first_name, last_name, email, date_created, status FROM users WHERE status=?"
+	findByEmailAndPasswordQuery = "SELECT id, first_name, last_name, email, date_created, status FROM users WHERE email=? AND password=?"
 )
 
 func (user *User) GetFromDB() *errors.RestError {
@@ -120,6 +121,24 @@ func (user *User) UpdateInDB() *errors.RestError {
 	_, updateErr := statement.Exec(user.FirstName, user.LastName, user.Email, user.Status, user.Password, user.Id)
 	if updateErr != nil {
 		return mysql_utils.GetMySQLError(updateErr)
+	}
+	return nil
+}
+
+func (user *User) FindByEmailAndPasswordInDB() *errors.RestError {
+	// Prepare statement
+	statement, err := users_db.ClientDB.Prepare(findByEmailAndPasswordQuery)
+	if err != nil {
+		logger.Error("Error when trying to prepare findByEmailAndPasswordQuery", err)
+		return errors.InternalServerError("Database error")
+	}
+	defer statement.Close()
+
+	result := statement.QueryRow(user.Email, user.Password)
+	// Scan - automatically fill the object attributes
+	getErr := result.Scan(&user.Id, &user.FirstName, &user.LastName, &user.Email, &user.DateCreated, &user.Status)
+	if getErr != nil {
+		return mysql_utils.GetMySQLError(getErr)
 	}
 	return nil
 }
