@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/r-zareba/bookstore_users_api/datasources/mysql/users_db"
 	"github.com/r-zareba/bookstore_users_api/logger"
-	"github.com/r-zareba/bookstore_users_api/utils/errors"
+	"github.com/r-zareba/bookstore_utils-go/rest_errors"
 	"github.com/r-zareba/bookstore_users_api/utils/mysql_utils"
 )
 
@@ -19,12 +19,12 @@ const (
 	findByEmailAndPasswordQuery = "SELECT id, first_name, last_name, email, date_created, status FROM users WHERE email=? AND password=?"
 )
 
-func (user *User) GetFromDB() *errors.RestError {
+func (user *User) GetFromDB() *rest_errors.RestError {
 	// Prepare statement
 	statement, err := users_db.ClientDB.Prepare(getUserQuery)
 	if err != nil {
 		logger.Error("Error when trying to prepare getUserQuery", err)
-		return errors.InternalServerError("Database error")
+		return rest_errors.InternalServerError("Database error", err)
 	}
 	defer statement.Close()
 
@@ -37,12 +37,12 @@ func (user *User) GetFromDB() *errors.RestError {
 	return nil
 }
 
-func (user *User) DeleteFromDB() *errors.RestError {
+func (user *User) DeleteFromDB() *rest_errors.RestError {
 	// Prepare statement
 	statement, err := users_db.ClientDB.Prepare(deleteQuery)
 	if err != nil {
 		logger.Error("Error when trying to prepare deleteUserQuery", err)
-		return errors.InternalServerError("Database error")
+		return rest_errors.InternalServerError("Database error", err)
 	}
 	defer statement.Close()
 
@@ -53,12 +53,12 @@ func (user *User) DeleteFromDB() *errors.RestError {
 	return nil
 }
 
-func (user *User) FindByStatusInDB(status string) ([]User, *errors.RestError) {
+func (user *User) FindByStatusInDB(status string) ([]User, *rest_errors.RestError) {
 	// Prepare statement
 	statement, err := users_db.ClientDB.Prepare(findByStatusQuery)
 	if err != nil {
 		logger.Error("Error when trying to prepare deleteUserQuery", err)
-		return nil, errors.InternalServerError("Database error")
+		return nil, rest_errors.InternalServerError("Database error", err)
 	}
 	defer statement.Close()
 
@@ -79,17 +79,17 @@ func (user *User) FindByStatusInDB(status string) ([]User, *errors.RestError) {
 	}
 
 	if len(results) == 0 {
-		return nil, errors.NotFoundError(fmt.Sprintf("Users with status: %s not found", status))
+		return nil, rest_errors.NotFoundError(fmt.Sprintf("Users with status: %s not found", status))
 	}
 	return results, nil
 }
 
-func (user *User) SaveToDB() *errors.RestError {
+func (user *User) SaveToDB() *rest_errors.RestError {
 	// Prepare statement
 	statement, err := users_db.ClientDB.Prepare(insertUserQuery)
 	if err != nil {
 		logger.Error("Error when trying to prepare insertUserQuery", err)
-		return errors.InternalServerError("Database error")
+		return rest_errors.InternalServerError("Database error", err)
 	}
 	defer statement.Close()
 
@@ -102,19 +102,19 @@ func (user *User) SaveToDB() *errors.RestError {
 
 	userId, err := insertResult.LastInsertId()
 	if err != nil {
-		return errors.InternalServerError("Cannot get last inserted ID")
+		return rest_errors.InternalServerError("Cannot get last inserted ID", err)
 	}
 
 	user.Id = userId
 	return nil
 }
 
-func (user *User) UpdateInDB() *errors.RestError {
+func (user *User) UpdateInDB() *rest_errors.RestError {
 	// Prepare statement
 	statement, err := users_db.ClientDB.Prepare(updateQuery)
 	if err != nil {
 		logger.Error("Error when trying to prepare updateQuery", err)
-		return errors.InternalServerError("Database error")
+		return rest_errors.InternalServerError("Database error", err)
 	}
 	defer statement.Close()
 
@@ -125,12 +125,12 @@ func (user *User) UpdateInDB() *errors.RestError {
 	return nil
 }
 
-func (user *User) FindByEmailAndPasswordInDB() *errors.RestError {
+func (user *User) FindByEmailAndPasswordInDB() *rest_errors.RestError {
 	// Prepare statement
 	statement, err := users_db.ClientDB.Prepare(findByEmailAndPasswordQuery)
 	if err != nil {
 		logger.Error("Error when trying to prepare findByEmailAndPasswordQuery", err)
-		return errors.InternalServerError("Database error")
+		return rest_errors.InternalServerError("Database error", err)
 	}
 	defer statement.Close()
 

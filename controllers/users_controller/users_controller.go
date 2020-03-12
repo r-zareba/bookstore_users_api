@@ -5,7 +5,7 @@ import (
 	"github.com/r-zareba/bookstore_oauth-go/oauth"
 	"github.com/r-zareba/bookstore_users_api/domain/users"
 	"github.com/r-zareba/bookstore_users_api/services"
-	"github.com/r-zareba/bookstore_users_api/utils/errors"
+	"github.com/r-zareba/bookstore_utils-go/rest_errors"
 	"net/http"
 	"strconv"
 )
@@ -14,7 +14,7 @@ func Create(ctx *gin.Context) {
 	var user users.User
 	// Bind json directly to fill User struct fields
 	if err := ctx.ShouldBindJSON(&user); err != nil {
-		restErr := errors.BadRequestError("Invalid JSON body")
+		restErr := rest_errors.BadRequestError("Invalid JSON body")
 		ctx.JSON(restErr.Status, restErr)
 		return
 	}
@@ -84,7 +84,7 @@ func Login(ctx *gin.Context) {
 	var loginRequest users.LoginRequest
 	err := ctx.ShouldBindJSON(&loginRequest)
 	if err != nil {
-		restErr := errors.BadRequestError("Invalid JSON body")
+		restErr := rest_errors.BadRequestError("Invalid JSON body")
 		ctx.JSON(restErr.Status, restErr)
 		return
 	}
@@ -107,7 +107,7 @@ func Update(ctx *gin.Context) {
 	user := users.User{Id: userId}
 	// Bind json directly to fill User struct fields
 	if err := ctx.ShouldBindJSON(&user); err != nil {
-		restErr := errors.BadRequestError("Invalid JSON body")
+		restErr := rest_errors.BadRequestError("Invalid JSON body")
 		ctx.JSON(restErr.Status, restErr)
 		return
 	}
@@ -133,7 +133,7 @@ func Search(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, users.Marshall(ctx.GetHeader("X-Public") == "true"))
 }
 
-func parseUserId(userIdParam string) (int64, *errors.RestError) {
+func parseUserId(userIdParam string) (int64, *rest_errors.RestError) {
 	userId, idError := strconv.ParseInt(userIdParam, 10, 64)
 	if idError != nil {
 		return 0, errors.BadRequestError("Cannot parse user id from URL")

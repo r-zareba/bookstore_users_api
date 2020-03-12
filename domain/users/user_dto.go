@@ -1,7 +1,8 @@
 package users
 
 import (
-	"github.com/r-zareba/bookstore_users_api/utils/errors"
+	"errors"
+	"github.com/r-zareba/bookstore_utils-go/rest_errors"
 	"strings"
 )
 
@@ -22,7 +23,7 @@ type User struct {
 
 type Users []User
 
-func (user *User) Validate() *errors.RestError {
+func (user *User) Validate() *rest_errors.RestError {
 	// Check user fields
 	user.FirstName = strings.TrimSpace(user.FirstName)
 	user.LastName = strings.TrimSpace(user.LastName)
@@ -65,18 +66,18 @@ func (user *User) UpdateFields(other User) {
 	user.Email = other.Email
 }
 
-func (user *User) checkEmail() *errors.RestError {
+func (user *User) checkEmail() *rest_errors.RestError {
 	user.Email = strings.TrimSpace(strings.ToLower(user.Email))
 	if user.Email == "" {
-		return errors.BadRequestError("Invalid email address")
+		return rest_errors.BadRequestError("Invalid email address")
 	}
 	return nil
 }
 
-func (user *User) checkPassword() *errors.RestError {
+func (user *User) checkPassword() *rest_errors.RestError {
 	user.Password = strings.TrimSpace(user.Password)
 	if len(user.Password) < 5 {
-		return errors.InternalServerError("Password too short!")
+		return rest_errors.InternalServerError("Password too short!", errors.New("Password too short"))
 	}
 	return nil
 }

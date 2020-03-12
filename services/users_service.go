@@ -4,10 +4,10 @@ import (
 	"github.com/r-zareba/bookstore_users_api/domain/users"
 	"github.com/r-zareba/bookstore_users_api/utils/crypto_utils"
 	"github.com/r-zareba/bookstore_users_api/utils/date_utils"
-	"github.com/r-zareba/bookstore_users_api/utils/errors"
+	"github.com/r-zareba/bookstore_utils-go/rest_errors"
 )
 
-func CreateUser(user users.User) (*users.User, *errors.RestError) {
+func CreateUser(user users.User) (*users.User, *rest_errors.RestError) {
 	if err := user.Validate(); err != nil {
 		return nil, err
 	}
@@ -23,7 +23,7 @@ func CreateUser(user users.User) (*users.User, *errors.RestError) {
 	return &user, nil
 }
 
-func GetUser(userId int64) (*users.User, *errors.RestError) {
+func GetUser(userId int64) (*users.User, *rest_errors.RestError) {
 	user := users.User{Id: userId}
 	if err := user.GetFromDB(); err != nil {
 		return nil, err
@@ -31,7 +31,7 @@ func GetUser(userId int64) (*users.User, *errors.RestError) {
 	return &user, nil
 }
 
-func LoginUser(request users.LoginRequest) (*users.User, *errors.RestError) {
+func LoginUser(request users.LoginRequest) (*users.User, *rest_errors.RestError) {
 	user := users.User{
 		Email: request.Email,
 		Password: crypto_utils.GetMd5(request.Password)}
@@ -41,7 +41,7 @@ func LoginUser(request users.LoginRequest) (*users.User, *errors.RestError) {
 	return &user, nil
 }
 
-func DeleteUser(userId int64) (*users.User, *errors.RestError) {
+func DeleteUser(userId int64) (*users.User, *rest_errors.RestError) {
 	currentUser, getErr := GetUser(userId)
 	if getErr != nil {
 		return nil, getErr
@@ -54,7 +54,7 @@ func DeleteUser(userId int64) (*users.User, *errors.RestError) {
 	return currentUser, nil
 }
 
-func UpdateUser(isPartial bool, user users.User) (*users.User, *errors.RestError) {
+func UpdateUser(isPartial bool, user users.User) (*users.User, *rest_errors.RestError) {
 	currentUser, getErr := GetUser(user.Id)
 	if getErr != nil {
 		return nil, getErr
@@ -76,7 +76,7 @@ func UpdateUser(isPartial bool, user users.User) (*users.User, *errors.RestError
 	return currentUser, nil
 }
 
-func Search(status string) (users.Users, *errors.RestError) {
+func Search(status string) (users.Users, *rest_errors.RestError) {
 	var dao users.User
 	return dao.FindByStatusInDB(status)
 }
