@@ -2,6 +2,7 @@ package users_controller
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/r-zareba/bookstore_oauth-go/oauth"
 	"github.com/r-zareba/bookstore_users_api/domain/users"
 	"github.com/r-zareba/bookstore_users_api/services"
 	"github.com/r-zareba/bookstore_users_api/utils/errors"
@@ -42,6 +43,23 @@ func Delete(ctx *gin.Context) {
 }
 
 func Get(ctx *gin.Context) {
+	// Handle access token logic
+	err := oauth.AuthenticateRequest(ctx.Request)
+	if err != nil {
+		ctx.JSON(err.Status, err)
+		return
+	}
+
+	//callerId := oauth.GetCallerId(ctx.Request)
+	//if callerId == 0 {
+	//	err := errors.RestError{
+	//		Message: "Resource not available",
+	//		Status:  http.StatusUnauthorized,
+	//	}
+	//	ctx.JSON(err.Status, err)
+	//	return
+	//}
+
 	userId, idError := parseUserId(ctx.Param("user_id"))
 	if idError != nil {
 		ctx.JSON(idError.Status, idError)
@@ -54,7 +72,12 @@ func Get(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, user.Marshall(ctx.GetHeader("X-Public") == "true"))
+	// If the caller id is the same as requested info id - give the private version of data
+	if oauth.GetCallerId(ctx.Request) == user.Id {
+		ctx.JSON(http.StatusOK, user.Marshall(false))
+		return
+	}
+	ctx.JSON(http.StatusOK, user.Marshall(oauth.IsPublic(ctx.Request)))
 }
 
 func Login(ctx *gin.Context) {
